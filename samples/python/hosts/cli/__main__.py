@@ -32,7 +32,7 @@ from common.utils.push_notification_auth import PushNotificationReceiverAuth
 
 @click.command()
 @click.option('--agent', default='http://localhost:10000')
-@click.option('--bearer-token')
+@click.option('--bearer-token', help='Bearer token for authentication.', envvar='A2A_CLI_BEARER_TOKEN')
 @click.option('--session', default=0)
 @click.option('--history', default=False)
 @click.option('--use_push_notifications', default=False)
