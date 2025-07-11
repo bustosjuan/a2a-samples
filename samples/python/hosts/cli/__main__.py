@@ -203,7 +203,7 @@ async def completeTask(
                 )
             )
             if isinstance(taskResultResponse.root, JSONRPCErrorResponse):
-                print(f'Error: {taskResultResponse.root.error}')
+                print(f'Error: {taskResultResponse.root.error}, contextId: {contextId}, taskId: {taskId}')
                 return False, contextId, taskId
             taskResult = taskResultResponse.root.result
     else:
