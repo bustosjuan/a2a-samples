@@ -2,7 +2,6 @@ import asyncio
 import base64
 import os
 import urllib
-
 from uuid import uuid4
 
 import asyncclick as click
@@ -32,6 +31,7 @@ from common.utils.push_notification_auth import PushNotificationReceiverAuth
 
 @click.command()
 @click.option('--agent', default='http://localhost:10000')
+@click.option('--bearer-token', help='Bearer token for authentication.', envvar='A2A_CLI_BEARER_TOKEN')
 @click.option('--session', default=0)
 @click.option('--history', default=False)
 @click.option('--use_push_notifications', default=False)
@@ -39,6 +39,7 @@ from common.utils.push_notification_auth import PushNotificationReceiverAuth
 @click.option('--header', multiple=True)
 async def cli(
     agent,
+    bearer_token,
     session,
     history,
     use_push_notifications: bool,
@@ -46,6 +47,8 @@ async def cli(
     header,
 ):
     headers = {h.split('=')[0]: h.split('=')[1] for h in header}
+    if bearer_token:
+        headers['Authorization'] = f'Bearer {bearer_token}'
     print(f'Will use headers: {headers}')
     async with httpx.AsyncClient(timeout=30, headers=headers) as httpx_client:
         card_resolver = A2ACardResolver(httpx_client, agent)
@@ -166,6 +169,7 @@ async def completeTask(
 
     taskResult = None
     message = None
+    task_completed = False
     if streaming:
         response_stream = client.send_message_streaming(
             SendStreamingMessageRequest(
@@ -175,7 +179,7 @@ async def completeTask(
         )
         async for result in response_stream:
             if isinstance(result.root, JSONRPCErrorResponse):
-                print('Error: ', result.root.error)
+                print(f'Error: {result.root.error}, contextId: {contextId}, taskId: {taskId}')
                 return False, contextId, taskId
             event = result.root.result
             contextId = event.contextId
@@ -185,18 +189,23 @@ async def completeTask(
                 event, TaskArtifactUpdateEvent
             ):
                 taskId = event.taskId
+                if isinstance(event, TaskStatusUpdateEvent) and event.status.state == 'completed':
+                    task_completed = True
             elif isinstance(event, Message):
                 message = event
             print(f'stream event => {event.model_dump_json(exclude_none=True)}')
         # Upon completion of the stream. Retrieve the full task if one was made.
-        if taskId:
-            taskResult = await client.get_task(
+        if taskId and not taskResult and not task_completed:
+            taskResultResponse = await client.get_task(
                 GetTaskRequest(
                     id=str(uuid4()),
                     params=TaskQueryParams(id=taskId),
                 )
             )
-            taskResult = taskResult.root.result
+            if isinstance(taskResultResponse.root, JSONRPCErrorResponse):
+                print(f'Error: {taskResultResponse.root.error}')
+                return False, contextId, taskId
+            taskResult = taskResultResponse.root.result
     else:
         try:
             # For non-streaming, assume the response is a task or message.
@@ -239,18 +248,14 @@ async def completeTask(
         ## if the result is that more input is required, loop again.
         state = TaskState(taskResult.status.state)
         if state.name == TaskState.input_required.name:
-            return (
-                await completeTask(
-                    client,
-                    streaming,
-                    use_push_notifications,
-                    notification_receiver_host,
-                    notification_receiver_port,
-                    taskId,
-                    contextId,
-                ),
-                contextId,
+            return await completeTask(
+                client,
+                streaming,
+                use_push_notifications,
+                notification_receiver_host,
+                notification_receiver_port,
                 taskId,
+                contextId,
             )
         ## task is complete
         return True, contextId, taskId
