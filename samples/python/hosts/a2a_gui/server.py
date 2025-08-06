@@ -110,6 +110,6 @@ async def proxy_request(request: Request):
 
     except Exception as e:
         traceback.print_exc()
-        return JSONResponse(content={'error': str(e), 'details': traceback.format_exc()}, status_code=500)
+        return JSONResponse(content={'error': str(e)}, status_code=500)
 
 app.mount("/", StaticFiles(directory="gui", html=True), name="static")
