@@ -16,7 +16,7 @@ This application provides a web-based graphical user interface (GUI) to interact
 
 1.  **Install Dependencies**:
 
-    From the `to_deploy` directory, install the required packages using `uv`:
+    From the `a2a_gui` directory, install the required packages using `uv`:
     ```bash
     uv pip install -e .
     ```
