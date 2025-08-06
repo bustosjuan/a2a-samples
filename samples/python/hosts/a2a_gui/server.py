@@ -81,9 +81,10 @@ async def proxy_request(request: Request):
             card = await card_resolver.get_agent_card()
             client = A2AClient(httpx_client, agent_card=card)
 
-            message_text = body.get('message', {}).get('parts', [{}])[0].get('text', '')
-            if not message_text:
+            parts = body.get('message', {}).get('parts', [])
+            if not parts or not parts[0].get('text'):
                 raise ValueError("Message text not found in request")
+            message_text = parts[0]['text']
 
             message = Message(
                 role='user',
