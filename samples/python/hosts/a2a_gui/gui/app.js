@@ -263,11 +263,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (isStreamingBotMessage) {
             messageElement = lastMessage;
-            messageElement.innerHTML += text.replace(/\n/g, '<br>');
+            messageElement.textContent += text;
         } else {
             messageElement = document.createElement('div');
             messageElement.className = `message ${sender}-message`;
-            messageElement.innerHTML = text.replace(/\n/g, '<br>');
+            messageElement.textContent = text;
             chatMessages.appendChild(messageElement);
         }
         chatMessages.scrollTop = chatMessages.scrollHeight;
