@@ -94,17 +94,16 @@ document.addEventListener('DOMContentLoaded', function() {
         contextId = null; // Reset context on initialization
         showSpinner(agentCardContainer);
 
-        const endpointValue = a2aEndpointInput.value.trim();
-        if (!endpointValue) {
+        let a2aEndpoint = a2aEndpointInput.value;
+        if (!a2aEndpoint.startsWith('http')) {
+            a2aEndpoint = 'https://' + a2aEndpoint;
+        }
+
+        if (!a2aEndpoint) {
             agentCardContainer.innerHTML = 'Please enter an A2A Endpoint URL.';
             hideSpinner(agentCardContainer);
             initializeButton.disabled = false;
             return;
-        }
-
-        let a2aEndpoint = endpointValue;
-        if (!a2aEndpoint.startsWith('http')) {
-            a2aEndpoint = 'https://' + a2aEndpoint;
         }
 
         const isAuthenticated = await getToken();
@@ -147,31 +146,78 @@ document.addEventListener('DOMContentLoaded', function() {
         const cardDiv = document.createElement('div');
         cardDiv.className = 'agent-card';
 
+        const header = document.createElement('div');
+        header.className = 'agent-card-header';
+        header.innerHTML = `Agent Card <span class="chevron">▼</span>`;
+        header.addEventListener('click', () => {
+            cardDiv.classList.toggle('collapsed');
+        });
+        cardDiv.appendChild(header);
+
         const body = document.createElement('div');
         body.className = 'agent-card-body';
-        body.innerHTML = `
-            <div class="agent-card-name">${card.name || 'A2A Agent'}</div>
-            ${card.description ? `<p>${card.description}</p>` : ''}
-            <div class="agent-card-details">
-                <strong>Capabilities:</strong>
-                <ul>${Object.entries(card.capabilities).map(([key, value]) => `<li>${key}: ${value}</li>`).join('')}</ul>
-            </div>
-            <div class="agent-card-details">
-                <strong>Skills:</strong>
-                <ul>${(card.skills || []).map(skill => `<li><strong>${skill.name}:</strong> ${skill.description}</li>`).join('')}</ul>
-            </div>
-            <button class="collapsible">View Raw JSON</button>
-            <div class="content"><pre>${JSON.stringify(card, null, 2)}</pre></div>
-        `;
-        cardDiv.appendChild(body);
-        agentCardContainer.appendChild(cardDiv);
 
-        const collapsible = cardDiv.querySelector('.collapsible');
-        const content = cardDiv.querySelector('.content');
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'agent-card-name';
+        nameDiv.textContent = card.name || 'A2A Agent';
+        body.appendChild(nameDiv);
+
+        if (card.description) {
+            const descriptionP = document.createElement('p');
+            descriptionP.textContent = card.description;
+            body.appendChild(descriptionP);
+        }
+
+        const capabilitiesDetails = document.createElement('div');
+        capabilitiesDetails.className = 'agent-card-details';
+        const capabilitiesStrong = document.createElement('strong');
+        capabilitiesStrong.textContent = 'Capabilities:';
+        capabilitiesDetails.appendChild(capabilitiesStrong);
+        const capabilitiesUl = document.createElement('ul');
+        for (const [key, value] of Object.entries(card.capabilities)) {
+            const capabilitiesLi = document.createElement('li');
+            capabilitiesLi.textContent = `${key}: ${value}`;
+            capabilitiesUl.appendChild(capabilitiesLi);
+        }
+        capabilitiesDetails.appendChild(capabilitiesUl);
+        body.appendChild(capabilitiesDetails);
+
+        const skillsDetails = document.createElement('div');
+        skillsDetails.className = 'agent-card-details';
+        const skillsStrong = document.createElement('strong');
+        skillsStrong.textContent = 'Skills:';
+        skillsDetails.appendChild(skillsStrong);
+        const skillsUl = document.createElement('ul');
+        for (const skill of card.skills || []) {
+            const skillsLi = document.createElement('li');
+            const skillStrong = document.createElement('strong');
+            skillStrong.textContent = `${skill.name}: `;
+            skillsLi.appendChild(skillStrong);
+            skillsLi.appendChild(document.createTextNode(skill.description));
+            skillsUl.appendChild(skillsLi);
+        }
+        skillsDetails.appendChild(skillsUl);
+        body.appendChild(skillsDetails);
+
+        const collapsible = document.createElement('button');
+        collapsible.className = 'collapsible';
+        collapsible.textContent = 'View Raw JSON';
+        body.appendChild(collapsible);
+
+        const content = document.createElement('div');
+        content.className = 'content';
+        const pre = document.createElement('pre');
+        pre.textContent = JSON.stringify(card, null, 2);
+        content.appendChild(pre);
+        body.appendChild(content);
+
         collapsible.addEventListener('click', function() {
             this.classList.toggle('active');
             content.style.display = content.style.display === 'block' ? 'none' : 'block';
         });
+
+        cardDiv.appendChild(body);
+        agentCardContainer.appendChild(cardDiv);
     }
 
     async function sendMessage() {
@@ -264,11 +310,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (isStreamingBotMessage) {
             messageElement = lastMessage;
-            messageElement.textContent += text;
+            messageElement.innerHTML += text.replace(/\n/g, '<br>');
         } else {
             messageElement = document.createElement('div');
             messageElement.className = `message ${sender}-message`;
-            messageElement.textContent = text;
+            messageElement.innerHTML = text.replace(/\n/g, '<br>');
             chatMessages.appendChild(messageElement);
         }
         chatMessages.scrollTop = chatMessages.scrollHeight;
