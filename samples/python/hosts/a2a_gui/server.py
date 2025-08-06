@@ -24,10 +24,20 @@ app.add_middleware(
 async def get_token():
     """Executes the gcloud command to get an identity token."""
     try:
-        token = subprocess.check_output(
-            ['gcloud', 'auth', 'print-identity-token']
-        ).decode('utf-8').strip()
+        proc = await asyncio.create_subprocess_exec(
+            'gcloud', 'auth', 'print-identity-token',
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await proc.communicate()
+
+        if proc.returncode != 0:
+            raise Exception(f"gcloud command failed: {stderr.decode('utf-8').strip()}")
+
+        token = stdout.decode('utf-8').strip()
         return JSONResponse(content={'token': token})
+    except FileNotFoundError:
+        return JSONResponse(content={'error': 'gcloud command not found. Please ensure the Google Cloud SDK is installed and in your PATH.'}, status_code=500)
     except Exception as e:
         return JSONResponse(content={'error': str(e)}, status_code=500)
 
