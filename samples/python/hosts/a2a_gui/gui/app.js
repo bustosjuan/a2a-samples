@@ -94,16 +94,17 @@ document.addEventListener('DOMContentLoaded', function() {
         contextId = null; // Reset context on initialization
         showSpinner(agentCardContainer);
 
-        let a2aEndpoint = a2aEndpointInput.value;
-        if (!a2aEndpoint.startsWith('http')) {
-            a2aEndpoint = 'https://' + a2aEndpoint;
-        }
-
-        if (!a2aEndpoint) {
+        const endpointValue = a2aEndpointInput.value.trim();
+        if (!endpointValue) {
             agentCardContainer.innerHTML = 'Please enter an A2A Endpoint URL.';
             hideSpinner(agentCardContainer);
             initializeButton.disabled = false;
             return;
+        }
+
+        let a2aEndpoint = endpointValue;
+        if (!a2aEndpoint.startsWith('http')) {
+            a2aEndpoint = 'https://' + a2aEndpoint;
         }
 
         const isAuthenticated = await getToken();
