@@ -1,8 +1,6 @@
-import asyncio
-import json
 import httpx
-import subprocess
 import traceback
+import asyncio
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -31,10 +29,8 @@ async def get_token():
             stderr=asyncio.subprocess.PIPE
         )
         stdout, stderr = await proc.communicate()
-
         if proc.returncode != 0:
             raise Exception(f"gcloud command failed: {stderr.decode('utf-8').strip()}")
-
         token = stdout.decode('utf-8').strip()
         return JSONResponse(content={'token': token})
     except FileNotFoundError:
