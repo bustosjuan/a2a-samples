@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 }
                             }
                             appendDebugMessage(JSON.stringify(json, null, 2));
-                        } catch (error) {
+                        } catch (e) {
                             appendDebugMessage(`Error parsing SSE: ${data}`);
                         }
                     }
