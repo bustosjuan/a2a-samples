@@ -14,21 +14,23 @@ This application provides a web-based graphical user interface (GUI) to interact
 
 ## Running the Application
 
-1.  **Install Dependencies**:
+1. **Install Dependencies**:
 
     From the `a2a_gui` directory, install the required packages using `uv`:
+
     ```bash
     uv pip install -e .
     ```
 
-2.  **Start the Server**:
+2. **Start the Server**:
 
     Run the web server using `uv`:
+
     ```bash
     uv run uvicorn server:app --host 0.0.0.0 --port 8000
     ```
 
-3.  **Connect to the GUI**:
+3. **Connect to the GUI**:
 
     Open your web browser and navigate to `http://localhost:8000`.
 
